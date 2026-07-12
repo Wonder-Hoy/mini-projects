@@ -43,6 +43,53 @@ def view_tasks(tasks):
         print(f"{index}. {status} {task['title']}")
     print("-" * 23)
 
+def ask_ai_assistant(tasks):
+    print("\nXander: Wassup dahg?")
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("❌ Error: Xander does not have a KEY and is slacking off!")
+        return
+
+    client = genai.Client()
+    
+    task_list_str = "\n".join([f"- {t['title']} (Completed: {t['completed']})" for t in tasks])
+    if not task_list_str:
+        task_list_str = "Why you lazy nyan~."
+
+    print("Type 'exit' to return to the main menu.")
+    
+    try:
+        # AI prompt
+        chat = client.chats.create(
+            model="gemini-3.5-flash",
+            config={
+                "system_instruction": f"You are a helpful productivity assistant. The user's current to-do list is:\n{task_list_str}\nHelp them prioritize, break down tasks, or give advice."
+            }
+        )
+        
+        while True:
+            user_input = input("\nYou: ")
+            
+            if user_input.lower() in ['exit', 'quit', 'back']:
+                print("Returning to main menu...")
+                break
+                
+            if not user_input.strip():
+                continue
+
+            try:
+                print("Xander: ", end="", flush=True)
+                response = chat.send_message_stream(user_input)
+                for chunk in response:
+                    print(chunk.text, end="", flush=True)
+                print("\n")
+                
+            except errors.APIError as e:
+                print(f"\nAPI Error: {e}")
+                
+    except Exception as e:
+        print(f"\nAn error occurred: {e}")
+
 def mark_completed(tasks):
     view_tasks(tasks)
     if not tasks:
@@ -84,9 +131,10 @@ def main():
         print("2. Add Task")
         print("3. Mark Task Completed")
         print("4. Remove Task")
-        print("5. Exit")
+        print("5. Ask AI Assistant")
+        print("6. Exit")
 
-        choice = input("Choose an option (1-5): ").strip()
+        choice = input("Choose an option (1-6): ").strip()
 
         if choice == "1":
             view_tasks(tasks)
@@ -97,9 +145,11 @@ def main():
         elif choice == "4":
             remove_task(tasks)
         elif choice == "5":
+            ask_ai_assistant(tasks)
+        elif choice == "6":
             print("\nGoodbye! Have a productive day!")
             sys.exit()
         else:
-            print("❌ Invalid choice. Please select a number between 1 and 5.")
+            print("❌ Invalid choice. Please select a number between 1 and 6.")
 
 main()
