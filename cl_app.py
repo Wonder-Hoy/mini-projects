@@ -1,6 +1,8 @@
 import json
 import os
 import sys
+from google import genai
+from google.genai import errors
 
 DATA_FILE = "todo_list.json"
 
